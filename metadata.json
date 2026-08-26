@@ -1,0 +1,6 @@
+{
+  "name": "Lottery All Hack - AI Signal Dashboard",
+  "description": "Real-time AI signal analytics and 27-engine predictive dashboard for Wingo lottery modes (30s, 1m, 3m, 5m) featuring master consensus voting, sure-shot triggers, and server leaderboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
