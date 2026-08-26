@@ -22,6 +22,31 @@ export const BACKUP_DRAW_ENDPOINTS: Record<GameMode, string> = {
   '5m': 'https://draw.ar-lottery02.com/WinGo/WinGo_5M/GetHistoryIssuePage.json',
 };
 
+export function incrementPeriod(periodStr: string): string {
+  try {
+    const clean = (periodStr || '').replace(/\D/g, '');
+    if (!clean) return Date.now().toString();
+    return (BigInt(clean) + 1n).toString();
+  } catch {
+    const num = parseInt(periodStr || '0', 10);
+    return isNaN(num) ? `${Date.now()}` : `${num + 1}`;
+  }
+}
+
+export function sortLotteryResultsDesc(list: LotteryResult[]): LotteryResult[] {
+  return list.sort((a, b) => {
+    try {
+      const aNum = BigInt((a.period || '').replace(/\D/g, '') || '0');
+      const bNum = BigInt((b.period || '').replace(/\D/g, '') || '0');
+      if (bNum > aNum) return 1;
+      if (bNum < aNum) return -1;
+      return 0;
+    } catch {
+      return (b.period || '').localeCompare(a.period || '');
+    }
+  });
+}
+
 export interface RawDrawItem {
   issueNumber?: string;
   period?: string;
@@ -102,8 +127,7 @@ export async function fetchLiveLotteryData(mode: GameMode): Promise<LotteryResul
         }
         if (parsedResults.length > 0) {
           // sort descending (latest first)
-          parsedResults.sort((a, b) => (BigInt(b.period) > BigInt(a.period) ? 1 : -1));
-          return parsedResults;
+          return sortLotteryResultsDesc(parsedResults);
         }
       }
     } catch {
@@ -263,7 +287,7 @@ export function simulateHistoryBackfill(
 
   // Compute prediction for next period
   const reversedHistory = [...history].reverse();
-  const nextPeriod = (BigInt(reversedHistory[0]?.period || '0') + 1n).toString();
+  const nextPeriod = incrementPeriod(reversedHistory[0]?.period || '0');
   const nextPreds = getAllPreds(reversedHistory, nextPeriod);
   engines.forEach((eng, idx) => {
     eng.currentPrediction = nextPreds[idx] || null;
@@ -343,7 +367,7 @@ export function processNewPeriodResult(
   recalcEngineRates(updatedEngines);
 
   // Compute prediction for upcoming period
-  const upcomingPeriod = (BigInt(newResult.period) + 1n).toString();
+  const upcomingPeriod = incrementPeriod(newResult.period);
   const nextPreds = getAllPreds(nextHistory, upcomingPeriod);
   updatedEngines.forEach((eng, idx) => {
     eng.currentPrediction = nextPreds[idx] || null;
